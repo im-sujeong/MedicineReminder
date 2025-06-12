@@ -19,7 +19,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sujeong.pillo.R
-import com.sujeong.pillo.presentation.home.model.CalendarDateModel
 import com.sujeong.pillo.ui.theme.PilloTheme
 import java.time.LocalDate
 
@@ -31,7 +30,7 @@ fun DayWeekText(
     Text(
         text = text,
         color = PilloTheme.colors.onSurface,
-        style = PilloTheme.typography.labelLargeBold,
+        style = PilloTheme.typography.bodyMediumBold,
         textAlign = TextAlign.Center,
         modifier = modifier
     )
@@ -84,30 +83,32 @@ fun DayWeekRow(
 
 @Composable
 fun DateText(
-    date: CalendarDateModel,
-    onClickDate: (date: CalendarDateModel) -> Unit,
-    modifier: Modifier = Modifier
+    date: LocalDate,
+    onClickDate: (date: LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+    isToday: Boolean = false,
+    isSelected: Boolean = false
 ) {
     Text(
-        text = date.date.dayOfMonth.toString(),
-        color = if(date.isSelected) {
+        text = date.dayOfMonth.toString(),
+        color = if(isSelected) {
             PilloTheme.colors.onPrimary
-        } else if(date.isToday) {
+        } else if(isToday) {
             PilloTheme.colors.primary
         } else {
-            PilloTheme.colors.onSurface
+            PilloTheme.colors.onSurfaceVariant
         },
-        style = if(date.isSelected) {
-            PilloTheme.typography.labelLargeBold
+        style = if(isSelected) {
+            PilloTheme.typography.bodyMediumBold
         } else {
-            PilloTheme.typography.labelLarge
+            PilloTheme.typography.bodyMedium
         },
         textAlign = TextAlign.Center,
         modifier = modifier
             .widthIn(40.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(
-                if(date.isSelected) {
+                if(isSelected) {
                     PilloTheme.colors.primary
                 } else {
                     Color.Transparent
@@ -122,26 +123,6 @@ fun DateText(
 }
 
 @Composable
-fun DateRow(
-    dates: List<CalendarDateModel>,
-    onclickDate: (date: CalendarDateModel) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        dates.forEach { date ->
-            DateText(
-                date = date,
-                modifier = Modifier.weight(1f),
-                onClickDate = onclickDate
-            )
-        }
-    }
-}
-
-@Composable
 @Preview()
 fun DayTextPreview() {
     PilloTheme {
@@ -153,16 +134,23 @@ fun DayTextPreview() {
             val today = LocalDate.now()
             val baseDate = LocalDate.now()
 
-            DateRow(
-                dates = (0..6).map {
-                    CalendarDateModel(
-                        baseDate.plusDays(it.toLong()),
-                        today.isEqual(baseDate),
-                        baseDate.dayOfMonth == 11,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                (0..6).forEach {
+                    val date = baseDate.plusDays(it.toLong())
+                    val isToday = today.isEqual(date)
+
+                    DateText(
+                        date = date,
+                        isToday = isToday,
+                        isSelected = isToday,
+                        modifier = Modifier.weight(1f),
+                        onClickDate = { }
                     )
-                },
-                onclickDate = { }
-            )
+                }
+            }
         }
     }
 }

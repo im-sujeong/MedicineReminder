@@ -10,6 +10,15 @@
     <string name="label_day_week_sat">토</string>
 
     <string name="label_today">오늘 먹을 약</string>
+    <string name="label_alarm_status_scheduled">예정됨</string>
+    <string name="label_alarm_status_taken">H시 m분에 먹음</string>
+    <string name="label_alarm_status_skipped">먹지 않음</string>
 
-    <string name="format_date_mm_dd">M월 d일</string>
+    <string name="msg_no_alarm">등록된 복약 알람이 없습니다.</string>
+
+    <string name="btn_add_alarm">복약</string>
+
+    <string name="format_date_M_d">M월 d일</string>
+    <string name="format_time_HH_mm">HH:mm</string>
+
 </resources>

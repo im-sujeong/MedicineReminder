@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.Color
 data class PilloColor(
     val material: ColorScheme,
     val iconDefault: Color,
-    val divider: Color,
+    val divider: Color
 ) {
     val primary: Color = material.primary
     val onPrimary: Color = material.onPrimary

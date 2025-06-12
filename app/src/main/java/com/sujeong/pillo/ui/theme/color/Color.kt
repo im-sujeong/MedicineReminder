@@ -27,7 +27,7 @@ val DarkColorScheme = PilloColor(
         error = Red
     ),
     iconDefault = Gray3,
-    divider = Gray4
+    divider = Gray4,
 )
 
 val LightColorScheme = PilloColor(
@@ -41,6 +41,6 @@ val LightColorScheme = PilloColor(
         onSurfaceVariant = Gray3,
         error = Red
     ),
-    iconDefault = Gray1,
-    divider = Gray2
+    iconDefault = Gray2,
+    divider = Gray1,
 )
