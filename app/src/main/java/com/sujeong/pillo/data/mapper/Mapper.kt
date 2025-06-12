@@ -12,3 +12,13 @@ fun MedicineAlarm.toEntity(): MedicineAlarmEntity {
         takenAt = takenAt
     )
 }
+
+fun MedicineAlarmEntity.toDomain(): MedicineAlarm {
+    return MedicineAlarm(
+        id = id,
+        title = title,
+        alarmDateTime = alarmDateTime,
+        alarmStatus = status,
+        takenAt = takenAt
+    )
+}

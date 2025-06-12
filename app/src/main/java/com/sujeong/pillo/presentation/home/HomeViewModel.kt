@@ -1,26 +1,37 @@
 package com.sujeong.pillo.presentation.home
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sujeong.pillo.R
+import com.sujeong.pillo.common.ResourceProvider
 import com.sujeong.pillo.domain.result.AlarmError
-import com.sujeong.pillo.domain.result.Result
+import com.sujeong.pillo.domain.result.onError
+import com.sujeong.pillo.domain.result.onSuccess
+import com.sujeong.pillo.domain.usecase.DeleteMedicineAlarmUseCase
 import com.sujeong.pillo.domain.usecase.GetMedicineAlarmUseCase
 import com.sujeong.pillo.domain.usecase.SaveMedicineAlarmUseCase
+import com.sujeong.pillo.presentation.base.BaseViewModel
 import com.sujeong.pillo.presentation.home.model.CalendarDateModel
 import com.sujeong.pillo.presentation.home.model.CalendarWeekModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    private val resourceProvider: ResourceProvider,
     private val getMedicineAlarmUseCase: GetMedicineAlarmUseCase,
-    private val saveMedicineAlarmUseCase: SaveMedicineAlarmUseCase
-): ViewModel() {
+    private val saveMedicineAlarmUseCase: SaveMedicineAlarmUseCase,
+    private val deleteMedicineAlarmUseCase: DeleteMedicineAlarmUseCase
+): BaseViewModel<HomeUiEffect>() {
     private val _state = MutableStateFlow(
         HomeState(
             weeks = getWeeks(),
@@ -32,6 +43,26 @@ class HomeViewModel @Inject constructor(
         )
     )
     val state get() = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _state.map { it.selectedDate.date }
+                .distinctUntilChanged()
+                .flatMapLatest {
+                    getMedicineAlarmUseCase(it)
+                }.collect { result ->
+                    result.onSuccess {
+                        _state.value = _state.value.copy(
+                            medicineAlarm = it
+                        )
+                    }.onError {
+                        _state.value = _state.value.copy(
+                            medicineAlarm = null
+                        )
+                    }
+                }
+        }
+    }
 
     private fun getWeeks(): List<CalendarWeekModel> {
         val baseDate = LocalDate.now()
@@ -73,7 +104,7 @@ class HomeViewModel @Inject constructor(
 
             HomeEvent.AddMedicineAlarm -> saveMedicineAlarm()
 
-            is HomeEvent.DeleteMedicineAlarm -> deleteMedicineAlarm()
+            is HomeEvent.DeleteMedicineAlarm -> deleteMedicineAlarm(event.id)
         }
     }
 
@@ -102,23 +133,34 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             saveMedicineAlarmUseCase(
                 alarmDateTime = _state.value.selectedDate.date.atTime(12, 0)
-            ).let { result ->
-                when(result) {
-                    is Result.Success<*> -> {
-
-                    }
-
-                    is Result.Error -> {
-                        if(result.error is AlarmError) {
-
-                        }
+            ).onError {
+                when(it) {
+                    is AlarmError.DuplicatedAlarmDate -> {
+                        onUiEffect(
+                            HomeUiEffect.ShowMessage(
+                                resourceProvider.getString(
+                                    R.string.snack_bar_msg_duplicate_alarm_date
+                                )
+                            )
+                        )
                     }
                 }
             }
         }
     }
 
-    private fun deleteMedicineAlarm() {
-
+    private fun deleteMedicineAlarm(alarmId: Long) {
+        viewModelScope.launch {
+            deleteMedicineAlarmUseCase(alarmId)
+                .onSuccess {
+                    onUiEffect(
+                        HomeUiEffect.ShowMessage(
+                            resourceProvider.getString(
+                                R.string.snack_bar_msg_deleted
+                            )
+                        )
+                    )
+                }
+        }
     }
 }

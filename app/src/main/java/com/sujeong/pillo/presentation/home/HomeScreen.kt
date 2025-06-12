@@ -1,9 +1,8 @@
 package com.sujeong.pillo.presentation.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,8 +12,12 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -28,6 +31,8 @@ import com.sujeong.pillo.domain.model.MedicineAlarm
 import com.sujeong.pillo.domain.model.enums.AlarmStatus
 import com.sujeong.pillo.presentation.home.model.CalendarDateModel
 import com.sujeong.pillo.presentation.home.model.CalendarWeekModel
+import com.sujeong.pillo.presentation.util.toUiColor
+import com.sujeong.pillo.presentation.util.toUiText
 import com.sujeong.pillo.ui.component.alarm.MedicineAlarmItem
 import com.sujeong.pillo.ui.component.button.SmallButton
 import com.sujeong.pillo.ui.component.calendar.DateText
@@ -42,32 +47,18 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    HomeContainer(
-        onEvent = viewModel::onEvent
-    ) { innerPadding ->
-        HomeColumn(innerPadding) {
-            HomeHeader(state.value.selectedDate)
-            HomeDayWeekRow()
-            HomeDatePager(
-                weeks = state.value.weeks,
-                selectedPage = state.value.selectedPage,
-                onEvent = viewModel::onEvent
-            )
-
-            HomeMedicineAlarmContent(
-                medicineAlarm = state.value.medicineAlarm,
-                onEvent = viewModel::onEvent
-            )
+    LaunchedEffect(Unit) {
+        viewModel.uiEffect.collect {
+            when(it) {
+                is HomeUiEffect.ShowMessage -> {
+                    snackbarHostState.showSnackbar(it.message)
+                }
+            }
         }
     }
-}
 
-@Composable
-private fun HomeContainer(
-    onEvent: (HomeEvent) -> Unit,
-    content: @Composable (innerPadding: PaddingValues) -> Unit
-) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = PilloTheme.colors.surface,
@@ -75,31 +66,54 @@ private fun HomeContainer(
             SmallButton(
                 text = stringResource(R.string.btn_add_alarm),
                 onClick = {
-                    onEvent(HomeEvent.AddMedicineAlarm)
+                    viewModel.onEvent(HomeEvent.AddMedicineAlarm)
                 },
                 icon = Icons.Rounded.Add,
                 shadowElevation = 2.dp
             )
         },
+        snackbarHost = {
+            SnackbarHost(snackbarHostState)
+        }
     ) { innerPadding ->
-        content(innerPadding)
+        HomeContent(
+            weeks = state.value.weeks,
+            selectedDate = state.value.selectedDate,
+            medicineAlarm = state.value.medicineAlarm,
+            onEvent = viewModel::onEvent,
+            modifier = Modifier.padding(innerPadding)
+        )
     }
 }
 
 @Composable
-private fun HomeColumn(
-    innerPadding: PaddingValues,
-    content: @Composable ColumnScope.() -> Unit
+private fun HomeContent(
+    weeks: List<CalendarWeekModel>,
+    selectedDate: CalendarDateModel,
+    medicineAlarm: MedicineAlarm?,
+    onEvent: (HomeEvent) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
+        modifier = modifier
             .padding(
                 top = 16.dp,
             )
     ) {
-        content()
+        HomeHeader(
+            selectedDate = selectedDate
+        )
+
+        HomeDayWeekRow()
+        HomeDatePager(
+            weeks = weeks,
+            onEvent = onEvent
+        )
+
+        HomeMedicineAlarmContent(
+            medicineAlarm = medicineAlarm,
+            onEvent = onEvent
+        )
     }
 }
 
@@ -137,11 +151,10 @@ private fun HomeDayWeekRow() {
 @Composable
 private fun HomeDatePager(
     weeks: List<CalendarWeekModel>,
-    selectedPage: Int,
     onEvent: (HomeEvent) -> Unit,
 ) {
     val pagerState = rememberPagerState(
-        initialPage = selectedPage
+        initialPage = 1
     ) {
         weeks.size
     }
@@ -194,7 +207,8 @@ private fun HomeNoDateText() {
             .fillMaxWidth()
             .padding(
                 top = 64.dp,
-            ).padding(
+            )
+            .padding(
                 horizontal = 20.dp
             ),
         textAlign = TextAlign.Center
@@ -207,23 +221,11 @@ private fun HomeMedicineAlarmContent(
     onEvent: (HomeEvent) -> Unit
 ) {
     medicineAlarm?.let {
-        var alarmStatusText = ""
-        var alarmStatusColor = PilloTheme.colors.onSurfaceVariant
-
-        when(medicineAlarm.alarmStatus) {
-            AlarmStatus.SCHEDULED -> {
-                alarmStatusText = stringResource(R.string.label_alarm_status_scheduled)
-                alarmStatusColor = PilloTheme.colors.onSurfaceVariant
-            }
-            AlarmStatus.TAKEN -> {
-                alarmStatusText = stringResource(R.string.label_alarm_status_taken)
-                alarmStatusColor = PilloTheme.colors.primary
-            }
-            AlarmStatus.SKIPPED -> {
-                alarmStatusText = stringResource(R.string.label_alarm_status_skipped)
-                alarmStatusColor = PilloTheme.colors.error
-            }
-        }
+        var alarmStatusColor = medicineAlarm.alarmStatus.toUiColor()
+        var alarmStatusText = medicineAlarm.alarmStatus.toUiText(
+            it.takenAt?.hour ?: 0,
+            it.takenAt?.minute ?: 0
+        )
 
         MedicineAlarmItem(
             alarmTime = it.alarmDateTime.toString(
@@ -237,11 +239,13 @@ private fun HomeMedicineAlarmContent(
                     HomeEvent.DeleteMedicineAlarm(it.id)
                 )
             },
-            modifier = Modifier.padding(
-                horizontal = 20.dp
-            ).padding(
-                top = 24.dp
-            )
+            modifier = Modifier
+                .padding(
+                    horizontal = 20.dp
+                )
+                .padding(
+                    top = 24.dp
+                )
         )
     } ?: run {
         HomeNoDateText()
@@ -255,47 +259,38 @@ fun HomeScreenPreview() {
         val today = LocalDate.now()
         val baseDate = today.with(DayOfWeek.MONDAY)
 
-        HomeContainer(
-            onEvent = { }
-        ) { innerPadding ->
-            HomeColumn(innerPadding) {
-                HomeHeader(
-                    selectedDate = CalendarDateModel(
-                        date = today,
-                        isToday = true,
-                        isSelected = true
-                    )
-                )
-                HomeDayWeekRow()
-                HomeDatePager(
-                    weeks = listOf(
-                        CalendarWeekModel(
-                            dates = (0..6).map {
-                                val date = baseDate.plusDays(it.toLong())
+        HomeContent(
+            weeks = listOf(
+                CalendarWeekModel(
+                    dates = (0..6).map {
+                        val date = baseDate.plusDays(it.toLong())
 
-                                CalendarDateModel(
-                                    date = date,
-                                    isToday = today.isEqual(date),
-                                    isSelected = today.isEqual(date)
-                                )
-                            }
+                        CalendarDateModel(
+                            date = date,
+                            isToday = today.isEqual(date),
+                            isSelected = today.isEqual(date)
                         )
-                    ),
-                    selectedPage = 1,
-                    onEvent = {}
+                    }
                 )
-
-                HomeMedicineAlarmContent(
-                    medicineAlarm = MedicineAlarm(
-                        id = 1,
-                        title = "약",
-                        alarmDateTime = LocalDateTime.now(),
-                        alarmStatus = AlarmStatus.SCHEDULED,
-                        takenAt = null
-                    ),
-                    onEvent = { }
+            ),
+            selectedDate = CalendarDateModel(
+                date = today,
+                isToday = true,
+                isSelected = true
+            ),
+            medicineAlarm = MedicineAlarm(
+                id = 1,
+                title = "약",
+                alarmDateTime = LocalDateTime.now(),
+                alarmStatus = AlarmStatus.TAKEN,
+                takenAt = LocalDateTime.now()
+            ),
+            onEvent = { },
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    PilloTheme.colors.surface
                 )
-            }
-        }
+        )
     }
 }
