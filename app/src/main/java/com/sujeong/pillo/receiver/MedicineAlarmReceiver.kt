@@ -12,7 +12,9 @@ import androidx.core.app.NotificationCompat
 import com.sujeong.pillo.AppConstant.PREF_KEY_CURRENT_ALARM_MEDICINE_ID
 import com.sujeong.pillo.presentation.main.MainActivity
 import com.sujeong.pillo.R
+import com.sujeong.pillo.common.manager.MedicineAlarmManager
 import com.sujeong.pillo.common.manager.PreferencesManager
+import com.sujeong.pillo.common.manager.SoundMediaManger
 import com.sujeong.pillo.domain.model.Medicine
 import com.sujeong.pillo.domain.result.onSuccess
 import com.sujeong.pillo.domain.usecase.GetMedicineByIdUseCase
@@ -30,6 +32,7 @@ class MedicineAlarmReceiver: BroadcastReceiver() {
     }
 
     @Inject lateinit var getMedicineByIdUseCase: GetMedicineByIdUseCase
+    @Inject lateinit var medicineAlarmManager: MedicineAlarmManager
     @Inject lateinit var preferencesManager: PreferencesManager
 
     override fun onReceive(context: Context, intent: Intent?) {
@@ -45,6 +48,8 @@ class MedicineAlarmReceiver: BroadcastReceiver() {
                             PREF_KEY_CURRENT_ALARM_MEDICINE_ID,
                             medicineId
                         )
+
+                        medicineAlarmManager.playAlarmSound()
 
                         notification(context, medicine)
                         startActivity(context, medicine)

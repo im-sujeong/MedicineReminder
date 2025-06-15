@@ -7,6 +7,8 @@ import com.sujeong.pillo.common.manager.MedicineAlarmManager
 import com.sujeong.pillo.common.manager.MedicineAlarmManagerImpl
 import com.sujeong.pillo.common.manager.PreferencesManager
 import com.sujeong.pillo.common.manager.PreferencesManagerImpl
+import com.sujeong.pillo.common.manager.SoundMediaManger
+import com.sujeong.pillo.common.manager.SoundMediaMangerImpl
 import com.sujeong.pillo.common.provider.ResourceProvider
 import com.sujeong.pillo.common.provider.ResourceProviderImpl
 import dagger.Module
@@ -30,9 +32,10 @@ class CommonModule {
     @Singleton
     @Provides
     fun provideMedicineAlarmManager(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        soundMediaManger: SoundMediaManger
     ): MedicineAlarmManager {
-        return MedicineAlarmManagerImpl(context)
+        return MedicineAlarmManagerImpl(context, soundMediaManger)
     }
 
     @Singleton
@@ -49,5 +52,13 @@ class CommonModule {
         preferences: SharedPreferences
     ): PreferencesManager {
         return PreferencesManagerImpl(preferences)
+    }
+
+    @Singleton
+    @Provides
+    fun provideSoundMediaManger(
+        @ApplicationContext context: Context
+    ): SoundMediaManger {
+        return SoundMediaMangerImpl(context)
     }
 }

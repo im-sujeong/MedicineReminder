@@ -47,6 +47,7 @@ class AlarmService : Service() {
                     if(medicine.alarmStatus == AlarmStatus.SCHEDULED) {
                         //아직 예정된 알람 이라면, onTaskRemoved 시 알람을 재등록.
                         Log.d("PilloTAG", "onTaskRemoved : 알람 재등록 !")
+                        medicineAlarmManager.stopAlarmSound()
                         medicineAlarmManager.setAlarm(medicine.id, LocalDateTime.now().millis())
                     }
                 }

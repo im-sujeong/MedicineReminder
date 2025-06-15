@@ -62,6 +62,7 @@ class AlarmViewModel @Inject constructor(
                     onUiEffect(AlarmUiEffect.TakenMedicine)
 
                     medicineAlarmManager.clearAlarmNotification(medicine.id)
+                    medicineAlarmManager.stopAlarmSound()
                 }
             }
         }
@@ -74,6 +75,7 @@ class AlarmViewModel @Inject constructor(
                     onUiEffect(AlarmUiEffect.SkippedMedicine)
 
                     medicineAlarmManager.clearAlarmNotification(medicine.id)
+                    medicineAlarmManager.stopAlarmSound()
                 }
             }
         }

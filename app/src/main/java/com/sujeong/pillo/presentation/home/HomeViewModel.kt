@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -211,6 +212,7 @@ class HomeViewModel @Inject constructor(
                 medicineAlarmManager.setAlarm(
                     medicineId = medicineId,
                     alarmDateTime = alarmDateTime.millis()
+//                    alarmDateTime = LocalDateTime.now().millis()
                 )
             }.onError {
                 when(it) {

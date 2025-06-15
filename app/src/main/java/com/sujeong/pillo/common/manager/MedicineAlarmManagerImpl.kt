@@ -9,7 +9,8 @@ import android.util.Log
 import com.sujeong.pillo.receiver.MedicineAlarmReceiver
 
 class MedicineAlarmManagerImpl(
-    private val context: Context
+    private val context: Context,
+    private val soundMediaManger: SoundMediaManger
 ): MedicineAlarmManager {
     override fun setAlarm(medicineId: Long, alarmDateTime: Long) {
         Log.d("PilloTAG", "setAlarm: medicineId = $medicineId, alarmDateTime = $alarmDateTime")
@@ -37,6 +38,14 @@ class MedicineAlarmManagerImpl(
                 as NotificationManager
 
         notificationManager.cancel(medicineId.toInt())
+    }
+
+    override fun playAlarmSound() {
+        soundMediaManger.play()
+    }
+
+    override fun stopAlarmSound() {
+        soundMediaManger.stop()
     }
 
     private fun getAlarmIntent(medicineId: Long) = PendingIntent.getBroadcast(
