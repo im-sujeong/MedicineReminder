@@ -2,7 +2,6 @@ package com.sujeong.pillo.presentation.main
 
 import android.app.KeyguardManager
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -16,7 +15,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.sujeong.pillo.receiver.MedicineAlarmReceiver
-import com.sujeong.pillo.receiver.ScreenReceiver
 import com.sujeong.pillo.navigation.AlarmRoute
 import com.sujeong.pillo.navigation.HomeRoute
 import com.sujeong.pillo.presentation.alarm.AlarmScreen
@@ -30,10 +28,6 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     private lateinit var alarmServiceIntent: Intent
-
-    private val screenReceiver by lazy {
-        ScreenReceiver()
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,6 +78,15 @@ class MainActivity : ComponentActivity() {
         getMedicineIdFromIntent(intent)
     }
 
+    override fun onPause() {
+        super.onPause()
+
+        if(viewModel.medicineId >= 0) {
+            Log.d("PilloTAG", "onPause !!")
+            startMainActivity()
+        }
+    }
+
     private fun getMedicineIdFromIntent(intent: Intent) {
         val medicineId = intent.getLongExtra(MedicineAlarmReceiver.KEY_MEDICINE_ID, -1)
 
@@ -92,28 +95,23 @@ class MainActivity : ComponentActivity() {
         viewModel.onEvent(MainEvent.Initialize(medicineId))
     }
 
+    private fun startMainActivity() {
+        val intent = Intent(this@MainActivity, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+
+        startActivity(intent)
+    }
+
     private fun startAlarm(medicineId: Long) {
         alarmServiceIntent = Intent(this, AlarmService::class.java).apply {
             putExtra(MedicineAlarmReceiver.KEY_MEDICINE_ID, medicineId)
         }
 
         startService(alarmServiceIntent)
-        registerScreenReceiver()
         showWhenLocked(true)
-    }
-
-    private fun registerScreenReceiver() {
-        registerReceiver(
-            screenReceiver,
-            IntentFilter().apply {
-                addAction(Intent.ACTION_SCREEN_ON)
-                addAction(Intent.ACTION_SCREEN_OFF)
-            }
-        )
-    }
-
-    private fun unregisterScreenReceiver() {
-        unregisterReceiver(screenReceiver)
     }
 
     private fun showWhenLocked(
@@ -146,7 +144,6 @@ class MainActivity : ComponentActivity() {
             stopService(alarmServiceIntent)
         }
 
-        unregisterScreenReceiver()
         showWhenLocked(false)
         showKeyGuard()
 

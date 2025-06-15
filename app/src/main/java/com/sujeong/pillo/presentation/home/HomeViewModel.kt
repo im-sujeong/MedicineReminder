@@ -211,8 +211,8 @@ class HomeViewModel @Inject constructor(
             ).onSuccess{ medicineId ->
                 medicineAlarmManager.setAlarm(
                     medicineId = medicineId,
-                    alarmDateTime = alarmDateTime.millis()
-//                    alarmDateTime = LocalDateTime.now().millis()
+//                    alarmDateTime = alarmDateTime.millis()
+                    alarmDateTime = LocalDateTime.now().millis()
                 )
             }.onError {
                 when(it) {

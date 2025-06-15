@@ -36,9 +36,6 @@
             android:name=".receiver.MedicineAlarmReceiver"
             android:exported="false" />
 
-        <receiver android:name=".receiver.ScreenReceiver"
-            android:exported="false"/>
-
         <service android:name=".service.AlarmService"
             android:exported="false"
             android:stopWithTask="false"/>
