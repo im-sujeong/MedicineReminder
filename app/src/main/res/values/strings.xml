@@ -13,13 +13,27 @@
     <string name="label_alarm_status_scheduled">예정됨</string>
     <string name="label_alarm_status_taken">%d시 %d분에 먹음</string>
     <string name="label_alarm_status_skipped">먹지 않음</string>
+    <string name="label_alarm_time">약 먹을 시간!</string>
 
     <string name="msg_no_alarm">등록된 복약 알람이 없습니다.</string>
 
     <string name="snack_bar_msg_duplicate_alarm_date">이미 등록된 알람이 있습니다.</string>
     <string name="snack_bar_msg_deleted">알람이 삭제되었습니다.</string>
+    <string name="snack_bar_granted_notification_permission">알림 권한이 허용되었습니다.</string>
+    <string name="snack_bar_denied_notification_permission">알림 권한이 거부되었습니다. 알람 확인을 위해서 알림 권한이 필요합니다.</string>
+
+    <string name="dialog_title_notification_permission">알람 권한 허용</string>
+    <string name="dialog_message_notification_permission">약 복용 알림을 설정한 시간에 제공하기 위해 권한이 필요합니다.</string>
+    <string name="dialog_title_system_alert_window_permission">다른 앱 위에 표시</string>
+    <string name="dialog_message_system_alert_window_permission">약 복용 알림을 설정한 시간에 제공하기 위해 권한이 필요합니다.</string>
+
+    <string name="notification_message_medicine_alarm">약 드실 시간입니다.</string>
 
     <string name="btn_add_alarm">복약</string>
+    <string name="btn_grant">허용</string>
+    <string name="btn_cancel">취소</string>
+    <string name="btn_now_take">지금 약 먹기</string>
+    <string name="btn_alarm_skip">안 먹고 건너뛰기</string>
 
     <string name="format_date_M_d">M월 d일</string>
     <string name="format_time_HH_mm">HH:mm</string>

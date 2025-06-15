@@ -14,13 +14,18 @@ data class PilloTypography(
         ),
         displayMedium = TextStyle(
             fontFamily = pretendard,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Normal,
             fontSize = 36.sp,
         ),
         titleLarge = TextStyle(
             fontFamily = pretendard,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Normal,
             fontSize = 24.sp,
+        ),
+        titleMedium = TextStyle(
+            fontFamily = pretendard,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
         ),
         bodyMedium = TextStyle(
             fontFamily = pretendard,
@@ -33,6 +38,15 @@ data class PilloTypography(
             fontSize = 14.sp,
         )
     ),
+    val displayMediumSemiBold: TextStyle = typography.displayMedium.copy(
+        fontWeight = FontWeight.SemiBold
+    ),
+    val titleLargeBold: TextStyle = typography.titleLarge.copy(
+        fontWeight = FontWeight.Bold
+    ),
+    val titleLargeSemiBold: TextStyle = typography.titleLarge.copy(
+        fontWeight = FontWeight.SemiBold
+    ),
     val bodyMediumBold: TextStyle = typography.bodyMedium.copy(
         fontWeight = FontWeight.Bold
     ),
@@ -43,6 +57,7 @@ data class PilloTypography(
     val displayLarge = typography.displayLarge
     val displayMedium = typography.displayMedium
     val titleLarge = typography.titleLarge
+    val titleMedium = typography.titleMedium
     val bodyMedium = typography.bodyMedium
     val labelLarge = typography.labelLarge
 }

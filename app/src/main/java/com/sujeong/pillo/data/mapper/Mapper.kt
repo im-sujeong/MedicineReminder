@@ -1,10 +1,10 @@
 package com.sujeong.pillo.data.mapper
 
-import com.sujeong.pillo.data.local.model.MedicineAlarmEntity
-import com.sujeong.pillo.domain.model.MedicineAlarm
+import com.sujeong.pillo.data.local.model.MedicineEntity
+import com.sujeong.pillo.domain.model.Medicine
 
-fun MedicineAlarm.toEntity(): MedicineAlarmEntity {
-    return MedicineAlarmEntity(
+fun Medicine.toEntity(): MedicineEntity {
+    return MedicineEntity(
         id = id,
         title = title,
         alarmDateTime = alarmDateTime,
@@ -13,8 +13,8 @@ fun MedicineAlarm.toEntity(): MedicineAlarmEntity {
     )
 }
 
-fun MedicineAlarmEntity.toDomain(): MedicineAlarm {
-    return MedicineAlarm(
+fun MedicineEntity.toDomain(): Medicine {
+    return Medicine(
         id = id,
         title = title,
         alarmDateTime = alarmDateTime,

@@ -1,5 +1,12 @@
 package com.sujeong.pillo.presentation.home
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,43 +26,95 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sujeong.pillo.R
 import com.sujeong.pillo.common.extension.toString
-import com.sujeong.pillo.domain.model.MedicineAlarm
+import com.sujeong.pillo.domain.model.Medicine
 import com.sujeong.pillo.domain.model.enums.AlarmStatus
 import com.sujeong.pillo.presentation.home.model.CalendarDateModel
 import com.sujeong.pillo.presentation.home.model.CalendarWeekModel
+import com.sujeong.pillo.presentation.home.model.PermissionDialogType.*
 import com.sujeong.pillo.presentation.util.toUiColor
 import com.sujeong.pillo.presentation.util.toUiText
-import com.sujeong.pillo.ui.component.alarm.MedicineAlarmItem
+import com.sujeong.pillo.ui.component.medicine.MedicineItem
 import com.sujeong.pillo.ui.component.button.SmallButton
 import com.sujeong.pillo.ui.component.calendar.DateText
 import com.sujeong.pillo.ui.component.calendar.DayWeekRow
+import com.sujeong.pillo.ui.component.dialog.AlertDialog
 import com.sujeong.pillo.ui.theme.PilloTheme
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import androidx.core.net.toUri
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+
     val state = viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        viewModel.onEvent(HomeEvent.OnNotificationPermissionResult(granted))
+    }
 
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect {
             when(it) {
+                HomeUiEffect.RequestNotificationPermission -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+
+                HomeUiEffect.RequestSystemAlertWindowPermission -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val intent =  Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                            data = "package:${context.packageName}".toUri()
+                        }
+
+                        context.startActivity(intent)
+                    }
+                }
+
                 is HomeUiEffect.ShowMessage -> {
-                    snackbarHostState.showSnackbar(it.message)
+                    snackBarHostState.showSnackbar(it.message)
                 }
             }
+        }
+    }
+
+    when(state.value.showPermissionDialogType) {
+        NONE -> Unit
+
+        NOTIFICATION -> {
+            NotificationPermissionDialog(
+                onClick = { isCancel ->
+                    viewModel.onEvent(
+                        HomeEvent.RequestNotificationPermission(isCancel)
+                    )
+                }
+            )
+        }
+
+        SYSTEM_ALERT_WINDOW -> {
+            SystemAlertWindowPermissionDialog(
+                onClick = { isCancel ->
+                    viewModel.onEvent(
+                        HomeEvent.RequestSystemAlertWindowPermission(isCancel)
+                    )
+                }
+            )
         }
     }
 
@@ -66,20 +125,21 @@ fun HomeScreen(
             SmallButton(
                 text = stringResource(R.string.btn_add_alarm),
                 onClick = {
-                    viewModel.onEvent(HomeEvent.AddMedicineAlarm)
+                    viewModel.onEvent(HomeEvent.AddMedicine)
                 },
                 icon = Icons.Rounded.Add,
                 shadowElevation = 2.dp
             )
         },
         snackbarHost = {
-            SnackbarHost(snackbarHostState)
+            SnackbarHost(snackBarHostState)
         }
     ) { innerPadding ->
         HomeContent(
+            currentWeekPage = state.value.currentWeekPage,
             weeks = state.value.weeks,
             selectedDate = state.value.selectedDate,
-            medicineAlarm = state.value.medicineAlarm,
+            medicine = state.value.medicine,
             onEvent = viewModel::onEvent,
             modifier = Modifier.padding(innerPadding)
         )
@@ -87,10 +147,70 @@ fun HomeScreen(
 }
 
 @Composable
+private fun NotificationPermissionDialog(
+    onClick: (isCancel: Boolean) -> Unit,
+) {
+    val context = LocalContext.current
+
+    val isGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+    } else true
+
+    if(!isGranted) {
+        AlertDialog(
+            title = R.string.dialog_title_notification_permission,
+            message = R.string.dialog_message_notification_permission,
+            positiveButton = R.string.btn_grant,
+            onPositiveClick = {
+                onClick(false)
+            },
+            negativeButton = R.string.btn_cancel,
+            onNegativeClick = {
+                onClick(true)
+            }
+        )
+    } else {
+        onClick(true)
+    }
+}
+
+@Composable
+private fun SystemAlertWindowPermissionDialog(
+    onClick: (isCancel: Boolean) -> Unit,
+) {
+    val context = LocalContext.current
+
+    val canDrawOverlays = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        Settings.canDrawOverlays(context)
+    } else true
+
+    if(!canDrawOverlays) {
+        AlertDialog(
+            title = R.string.dialog_title_system_alert_window_permission,
+            message = R.string.dialog_message_system_alert_window_permission,
+            positiveButton = R.string.btn_grant,
+            onPositiveClick = {
+                onClick(false)
+            },
+            negativeButton = R.string.btn_cancel,
+            onNegativeClick = {
+                onClick(true)
+            }
+        )
+    } else {
+        onClick(true)
+    }
+}
+
+@Composable
 private fun HomeContent(
+    currentWeekPage: Int,
     weeks: List<CalendarWeekModel>,
     selectedDate: CalendarDateModel,
-    medicineAlarm: MedicineAlarm?,
+    medicine: Medicine?,
     onEvent: (HomeEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -106,12 +226,13 @@ private fun HomeContent(
 
         HomeDayWeekRow()
         HomeDatePager(
+            currentWeekPage = currentWeekPage,
             weeks = weeks,
             onEvent = onEvent
         )
 
         HomeMedicineAlarmContent(
-            medicineAlarm = medicineAlarm,
+            medicine = medicine,
             onEvent = onEvent
         )
     }
@@ -130,7 +251,7 @@ private fun HomeHeader(
             )
         },
         color = PilloTheme.colors.onSurface,
-        style = PilloTheme.typography.titleLarge,
+        style = PilloTheme.typography.titleLargeBold,
         modifier = Modifier.padding(horizontal = 20.dp)
     )
 }
@@ -150,13 +271,18 @@ private fun HomeDayWeekRow() {
 
 @Composable
 private fun HomeDatePager(
+    currentWeekPage: Int,
     weeks: List<CalendarWeekModel>,
     onEvent: (HomeEvent) -> Unit,
 ) {
     val pagerState = rememberPagerState(
-        initialPage = 1
+        initialPage = currentWeekPage
     ) {
         weeks.size
+    }
+
+    LaunchedEffect(pagerState.currentPage) {
+        onEvent(HomeEvent.ChangedWeekPage(pagerState.currentPage))
     }
 
     HorizontalPager(
@@ -217,17 +343,17 @@ private fun HomeNoDateText() {
 
 @Composable
 private fun HomeMedicineAlarmContent(
-    medicineAlarm: MedicineAlarm?,
+    medicine: Medicine?,
     onEvent: (HomeEvent) -> Unit
 ) {
-    medicineAlarm?.let {
-        var alarmStatusColor = medicineAlarm.alarmStatus.toUiColor()
-        var alarmStatusText = medicineAlarm.alarmStatus.toUiText(
+    medicine?.let {
+        var alarmStatusColor = medicine.alarmStatus.toUiColor()
+        var alarmStatusText = medicine.alarmStatus.toUiText(
             it.takenAt?.hour ?: 0,
             it.takenAt?.minute ?: 0
         )
 
-        MedicineAlarmItem(
+        MedicineItem(
             alarmTime = it.alarmDateTime.toString(
                 stringResource(R.string.format_time_HH_mm)
             ),
@@ -236,7 +362,7 @@ private fun HomeMedicineAlarmContent(
             alarmStatusColor = alarmStatusColor,
             onDeleted = {
                 onEvent(
-                    HomeEvent.DeleteMedicineAlarm(it.id)
+                    HomeEvent.DeleteMedicine(it.id)
                 )
             },
             modifier = Modifier
@@ -260,6 +386,7 @@ fun HomeScreenPreview() {
         val baseDate = today.with(DayOfWeek.MONDAY)
 
         HomeContent(
+            currentWeekPage = 1,
             weeks = listOf(
                 CalendarWeekModel(
                     dates = (0..6).map {
@@ -278,7 +405,7 @@ fun HomeScreenPreview() {
                 isToday = true,
                 isSelected = true
             ),
-            medicineAlarm = MedicineAlarm(
+            medicine = Medicine(
                 id = 1,
                 title = "약",
                 alarmDateTime = LocalDateTime.now(),

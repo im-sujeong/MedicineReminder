@@ -1,4 +1,4 @@
-package com.sujeong.pillo.common
+package com.sujeong.pillo.common.provider
 
 import android.content.Context
 

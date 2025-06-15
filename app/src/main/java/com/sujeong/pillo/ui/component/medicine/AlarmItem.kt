@@ -1,4 +1,4 @@
-package com.sujeong.pillo.ui.component.alarm
+package com.sujeong.pillo.ui.component.medicine
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.sujeong.pillo.ui.theme.PilloTheme
 
 @Composable
-fun MedicineAlarmItem(
+fun MedicineItem(
     alarmTime: String,
     title: String,
     alarmStatusText: String,
@@ -48,7 +48,7 @@ fun MedicineAlarmItem(
         Text(
             text = alarmTime,
             color = PilloTheme.colors.onSurface,
-            style = PilloTheme.typography.titleLarge,
+            style = PilloTheme.typography.titleLargeBold,
             modifier = Modifier.padding(
                 horizontal = 16.dp
             )
@@ -103,14 +103,14 @@ fun MedicineAlarmItem(
 
 @Composable
 @Preview
-fun AlarmItemPreview() {
+fun MedicineItemPreview() {
     PilloTheme {
         Column(
             modifier = Modifier
                 .background(PilloTheme.colors.surface)
                 .padding(16.dp)
         ) {
-            MedicineAlarmItem(
+            MedicineItem(
                 alarmTime = "12:00",
                 title = "약",
                 alarmStatusText = "예정됨",

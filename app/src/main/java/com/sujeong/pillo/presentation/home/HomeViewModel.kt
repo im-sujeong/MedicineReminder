@@ -2,16 +2,19 @@ package com.sujeong.pillo.presentation.home
 
 import androidx.lifecycle.viewModelScope
 import com.sujeong.pillo.R
-import com.sujeong.pillo.common.ResourceProvider
+import com.sujeong.pillo.common.extension.millis
+import com.sujeong.pillo.alarm.manager.MedicineAlarmManager
+import com.sujeong.pillo.common.provider.ResourceProvider
 import com.sujeong.pillo.domain.result.AlarmError
 import com.sujeong.pillo.domain.result.onError
 import com.sujeong.pillo.domain.result.onSuccess
-import com.sujeong.pillo.domain.usecase.DeleteMedicineAlarmUseCase
-import com.sujeong.pillo.domain.usecase.GetMedicineAlarmUseCase
-import com.sujeong.pillo.domain.usecase.SaveMedicineAlarmUseCase
-import com.sujeong.pillo.presentation.base.BaseViewModel
+import com.sujeong.pillo.domain.usecase.DeleteMedicineUseCase
+import com.sujeong.pillo.domain.usecase.GetMedicineUseCase
+import com.sujeong.pillo.domain.usecase.SaveMedicineUseCase
+import com.sujeong.pillo.common.base.BaseViewModel
 import com.sujeong.pillo.presentation.home.model.CalendarDateModel
 import com.sujeong.pillo.presentation.home.model.CalendarWeekModel
+import com.sujeong.pillo.presentation.home.model.PermissionDialogType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,15 +25,17 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val resourceProvider: ResourceProvider,
-    private val getMedicineAlarmUseCase: GetMedicineAlarmUseCase,
-    private val saveMedicineAlarmUseCase: SaveMedicineAlarmUseCase,
-    private val deleteMedicineAlarmUseCase: DeleteMedicineAlarmUseCase
+    private val getMedicineUseCase: GetMedicineUseCase,
+    private val saveMedicineUseCase: SaveMedicineUseCase,
+    private val deleteMedicineUseCase: DeleteMedicineUseCase,
+    private val medicineAlarmManager: MedicineAlarmManager
 ): BaseViewModel<HomeUiEffect>() {
     private val _state = MutableStateFlow(
         HomeState(
@@ -49,15 +54,15 @@ class HomeViewModel @Inject constructor(
             _state.map { it.selectedDate.date }
                 .distinctUntilChanged()
                 .flatMapLatest {
-                    getMedicineAlarmUseCase(it)
+                    getMedicineUseCase(it)
                 }.collect { result ->
                     result.onSuccess {
                         _state.value = _state.value.copy(
-                            medicineAlarm = it
+                            medicine = it
                         )
                     }.onError {
                         _state.value = _state.value.copy(
-                            medicineAlarm = null
+                            medicine = null
                         )
                     }
                 }
@@ -98,20 +103,88 @@ class HomeViewModel @Inject constructor(
 
     fun onEvent(event: HomeEvent) {
         when(event) {
+            is HomeEvent.RequestNotificationPermission -> requestNotificationPermission(event.isCancel)
+
+            is HomeEvent.OnNotificationPermissionResult -> onNotificationPermissionResult(event.isGranted)
+
+            is HomeEvent.RequestSystemAlertWindowPermission -> requestSystemAlertWindowPermission(event.isCancel)
+
+            is HomeEvent.ChangedWeekPage -> changedWeekPage(event.page)
+
             is HomeEvent.SelectedDate -> selectedDate(
                 selectedDate = event.date
             )
 
-            HomeEvent.AddMedicineAlarm -> saveMedicineAlarm()
+            HomeEvent.AddMedicine -> addMedicine()
 
-            is HomeEvent.DeleteMedicineAlarm -> deleteMedicineAlarm(event.id)
+            is HomeEvent.DeleteMedicine -> deleteMedicine(event.id)
+        }
+    }
+
+    private fun requestNotificationPermission(isCancel: Boolean) {
+        if(isCancel) {
+            _state.value = _state.value.copy(
+                showPermissionDialogType = PermissionDialogType.SYSTEM_ALERT_WINDOW
+            )
+        } else {
+            onUiEffect(
+                HomeUiEffect.RequestNotificationPermission
+            )
+        }
+    }
+
+    private fun onNotificationPermissionResult(isGranted: Boolean) {
+        _state.value = _state.value.copy(
+            showPermissionDialogType = PermissionDialogType.SYSTEM_ALERT_WINDOW
+        )
+
+        onUiEffect(
+            HomeUiEffect.ShowMessage(
+                if(isGranted) {
+                    resourceProvider.getString(
+                        R.string.snack_bar_granted_notification_permission
+                    )
+                } else {
+                    resourceProvider.getString(
+                        R.string.snack_bar_denied_notification_permission
+                    )
+                }
+            )
+        )
+    }
+
+    private fun requestSystemAlertWindowPermission(isCancel: Boolean) {
+        _state.value = _state.value.copy(
+            showPermissionDialogType = PermissionDialogType.NONE
+        )
+
+        if(!isCancel) {
+            onUiEffect(
+                HomeUiEffect.RequestSystemAlertWindowPermission
+            )
+        }
+    }
+
+    private fun changedWeekPage(page: Int) {
+        if(page > _state.value.currentWeekPage) {
+            selectedDate(
+                _state.value.weeks[page].dates.first().date,
+                currentWeekPage = page
+            )
+        } else if(page < _state.value.currentWeekPage) {
+            selectedDate(
+                _state.value.weeks[page].dates.last().date,
+                currentWeekPage = page
+            )
         }
     }
 
     private fun selectedDate(
-        selectedDate: LocalDate
+        selectedDate: LocalDate,
+        currentWeekPage: Int = _state.value.currentWeekPage,
     ) {
         _state.value = _state.value.copy(
+            currentWeekPage = currentWeekPage,
             weeks = _state.value.weeks.map { week ->
                 week.copy(
                     dates = week.dates.map {
@@ -129,11 +202,20 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    private fun saveMedicineAlarm() {
+    private fun addMedicine() {
         viewModelScope.launch {
-            saveMedicineAlarmUseCase(
-                alarmDateTime = _state.value.selectedDate.date.atTime(12, 0)
-            ).onError {
+            val alarmDateTime = _state.value.selectedDate.date.atTime(12, 0)
+
+            saveMedicineUseCase(
+                alarmDateTime = alarmDateTime
+            ).onSuccess{ medicineId ->
+                //TODO
+                //            setAlarmUseCase(medicineId, alarmDateTime)
+                medicineAlarmManager.setAlarm(
+                    medicineId = medicineId,
+                    alarmDateTime = LocalDateTime.now().plusSeconds(10).millis()
+                )
+            }.onError {
                 when(it) {
                     is AlarmError.DuplicatedAlarmDate -> {
                         onUiEffect(
@@ -149,10 +231,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun deleteMedicineAlarm(alarmId: Long) {
+    private fun deleteMedicine(medicineId: Long) {
         viewModelScope.launch {
-            deleteMedicineAlarmUseCase(alarmId)
+            deleteMedicineUseCase(medicineId)
                 .onSuccess {
+                    medicineAlarmManager.cancelAlarm(medicineId)
+
                     onUiEffect(
                         HomeUiEffect.ShowMessage(
                             resourceProvider.getString(

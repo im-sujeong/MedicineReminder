@@ -1,27 +1,27 @@
 package com.sujeong.pillo.domain.usecase
 
 import com.sujeong.pillo.domain.result.DataResult
-import com.sujeong.pillo.domain.model.MedicineAlarm
-import com.sujeong.pillo.domain.repository.MedicineAlarmRepository
+import com.sujeong.pillo.domain.model.Medicine
+import com.sujeong.pillo.domain.repository.MedicineRepository
 import com.sujeong.pillo.domain.result.AlarmError
 import java.time.LocalDateTime
 import javax.inject.Inject
 
-class SaveMedicineAlarmUseCase @Inject constructor(
-    private val medicineAlarmRepository: MedicineAlarmRepository
+class SaveMedicineUseCase @Inject constructor(
+    private val medicineRepository: MedicineRepository
 ) {
     suspend operator fun invoke(
         alarmDateTime: LocalDateTime,
         title: String = "약 ${System.currentTimeMillis()}",
     ) = runCatching {
-        medicineAlarmRepository.saveMedicineAlarm(
-            MedicineAlarm(
+        medicineRepository.saveMedicine(
+            Medicine(
                 title = title,
                 alarmDateTime = alarmDateTime.withSecond(0).withNano(0),
             )
-        ).let { alarmId ->
-            if(alarmId > -1) {
-                alarmId
+        ).let { medicineId ->
+            if(medicineId > -1) {
+                medicineId
             } else {
                 throw AlarmError.DuplicatedAlarmDate
             }

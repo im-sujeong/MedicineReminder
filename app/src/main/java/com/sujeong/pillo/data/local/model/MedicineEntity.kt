@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 @Entity(
     indices = [Index(value = ["alarmDateTime"], unique = true)]
 )
-data class MedicineAlarmEntity(
+data class MedicineEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long,
     val title: String,

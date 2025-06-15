@@ -5,7 +5,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
 val Blue = Color(0xFF4276FD)
-val Blue2 = Color(0xFF658FFD)
+val Blue2 = Color(0xFF2F4B94)
 val Gray1 = Color(0xFFEEEEEE)
 val Gray2 = Color(0xFFA4A4A4)
 val Gray3 = Color(0xFF686868)
@@ -26,7 +26,7 @@ val DarkColorScheme = PilloColor(
         onSurfaceVariant = Gray2,
         error = Red
     ),
-    iconDefault = Gray3,
+    iconDefault = Gray2,
     divider = Gray4,
 )
 

@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.sujeong.pillo.data.local.AppDatabase
 import com.sujeong.pillo.data.local.RoomConstant
-import com.sujeong.pillo.data.local.dao.MedicineAlarmDao
+import com.sujeong.pillo.data.local.dao.MedicineDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,5 +29,5 @@ class LocalModule {
     @Singleton
     fun provideMedicineAlarmDao(
         database: AppDatabase
-    ): MedicineAlarmDao = database.medicineAlarmDao()
+    ): MedicineDao = database.medicineAlarmDao()
 }

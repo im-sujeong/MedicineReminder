@@ -3,6 +3,7 @@ package com.sujeong.pillo.common.extension
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -23,3 +24,5 @@ fun LocalDateTime.toString(
     val formatter = DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
     return format(formatter)
 }
+
+fun LocalDateTime.millis() = this.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()

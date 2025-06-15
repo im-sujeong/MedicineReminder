@@ -11,6 +11,7 @@ data class PilloColor(
     val primary: Color = material.primary
     val onPrimary: Color = material.onPrimary
     val secondary: Color = material.secondary
+    val onSecondary: Color = material.onSecondary
     val background: Color = material.background
     val surface: Color = material.surface
     val onSurface: Color = material.onSurface

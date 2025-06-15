@@ -1,4 +1,4 @@
-package com.sujeong.pillo.presentation.base
+package com.sujeong.pillo.common.base
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
