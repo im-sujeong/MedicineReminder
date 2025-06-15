@@ -2,7 +2,6 @@
 - Kotlin
 - Compose
 - Hilt, Coroutine, Room
-</br>
 
 ### 아키텍쳐 / 디자인패턴
 - Clean Architecture + MVI
