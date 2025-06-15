@@ -1,4 +1,4 @@
-package com.sujeong.pillo
+package com.sujeong.pillo.presentation.main
 
 import com.sujeong.pillo.common.base.BaseUiEffect
 

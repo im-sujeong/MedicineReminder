@@ -1,4 +1,4 @@
-package com.sujeong.pillo
+package com.sujeong.pillo.presentation.main
 
 sealed class MainEvent {
     data class Initialize(

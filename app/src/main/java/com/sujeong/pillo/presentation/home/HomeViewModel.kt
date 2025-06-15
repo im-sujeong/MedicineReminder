@@ -3,7 +3,7 @@ package com.sujeong.pillo.presentation.home
 import androidx.lifecycle.viewModelScope
 import com.sujeong.pillo.R
 import com.sujeong.pillo.common.extension.millis
-import com.sujeong.pillo.alarm.manager.MedicineAlarmManager
+import com.sujeong.pillo.common.manager.MedicineAlarmManager
 import com.sujeong.pillo.common.provider.ResourceProvider
 import com.sujeong.pillo.domain.result.AlarmError
 import com.sujeong.pillo.domain.result.onError
@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -209,11 +208,9 @@ class HomeViewModel @Inject constructor(
             saveMedicineUseCase(
                 alarmDateTime = alarmDateTime
             ).onSuccess{ medicineId ->
-                //TODO
-                //            setAlarmUseCase(medicineId, alarmDateTime)
                 medicineAlarmManager.setAlarm(
                     medicineId = medicineId,
-                    alarmDateTime = LocalDateTime.now().plusSeconds(10).millis()
+                    alarmDateTime = alarmDateTime.millis()
                 )
             }.onError {
                 when(it) {

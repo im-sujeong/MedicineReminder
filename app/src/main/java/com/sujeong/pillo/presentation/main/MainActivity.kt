@@ -1,10 +1,11 @@
-package com.sujeong.pillo
+package com.sujeong.pillo.presentation.main
 
 import android.app.KeyguardManager
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,18 +15,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.sujeong.pillo.alarm.receiver.MedicineAlarmReceiver
-import com.sujeong.pillo.alarm.receiver.ScreenReceiver
+import com.sujeong.pillo.receiver.MedicineAlarmReceiver
+import com.sujeong.pillo.receiver.ScreenReceiver
 import com.sujeong.pillo.navigation.AlarmRoute
 import com.sujeong.pillo.navigation.HomeRoute
 import com.sujeong.pillo.presentation.alarm.AlarmScreen
 import com.sujeong.pillo.presentation.home.HomeScreen
+import com.sujeong.pillo.service.AlarmService
 import com.sujeong.pillo.ui.theme.PilloTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
+
+    private lateinit var alarmServiceIntent: Intent
 
     private val screenReceiver by lazy {
         ScreenReceiver()
@@ -44,8 +48,7 @@ class MainActivity : ComponentActivity() {
                         when(uiEffect) {
                             is MainUiEffect.NavigateToHome -> showWhenLocked(false)
                             is MainUiEffect.NavigateToAlarm -> {
-                                registerScreenReceiver()
-                                showWhenLocked(true)
+                                startAlarm(uiEffect.medicineId)
                                 navController.navigate(AlarmRoute(uiEffect.medicineId))
                             }
                         }
@@ -63,7 +66,7 @@ class MainActivity : ComponentActivity() {
                     composable<AlarmRoute> {
                         AlarmScreen(
                             onGoBack = {
-                                handleAlarmOnGoBack()
+                                clearAlarm()
                                 navController.navigateUp()
                             }
                         )
@@ -81,24 +84,22 @@ class MainActivity : ComponentActivity() {
         getMedicineIdFromIntent(intent)
     }
 
-    override fun onPause() {
-        super.onPause()
-
-        if(viewModel.medicineId >= 0) {
-            val intent = Intent(this, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
-            }
-
-            startActivity(intent)
-        }
-    }
-
     private fun getMedicineIdFromIntent(intent: Intent) {
         val medicineId = intent.getLongExtra(MedicineAlarmReceiver.KEY_MEDICINE_ID, -1)
 
+        Log.d("PilloTAG", "getMedicineIdFromIntent medicineId = $medicineId")
+
         viewModel.onEvent(MainEvent.Initialize(medicineId))
+    }
+
+    private fun startAlarm(medicineId: Long) {
+        alarmServiceIntent = Intent(this, AlarmService::class.java).apply {
+            putExtra(MedicineAlarmReceiver.KEY_MEDICINE_ID, medicineId)
+        }
+
+        startService(alarmServiceIntent)
+        registerScreenReceiver()
+        showWhenLocked(true)
     }
 
     private fun registerScreenReceiver() {
@@ -140,7 +141,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun handleAlarmOnGoBack() {
+    private fun clearAlarm() {
+        if(::alarmServiceIntent.isInitialized) {
+            stopService(alarmServiceIntent)
+        }
+
         unregisterScreenReceiver()
         showWhenLocked(false)
         showKeyGuard()

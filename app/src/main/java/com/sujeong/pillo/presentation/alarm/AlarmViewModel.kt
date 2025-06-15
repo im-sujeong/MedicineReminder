@@ -2,7 +2,7 @@ package com.sujeong.pillo.presentation.alarm
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import com.sujeong.pillo.alarm.manager.MedicineAlarmManager
+import com.sujeong.pillo.common.manager.MedicineAlarmManager
 import com.sujeong.pillo.common.base.BaseViewModel
 import com.sujeong.pillo.common.extension.toString
 import com.sujeong.pillo.domain.model.Medicine

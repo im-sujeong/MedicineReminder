@@ -1,4 +1,4 @@
-package com.sujeong.pillo.alarm.manager
+package com.sujeong.pillo.common.manager
 
 interface MedicineAlarmManager {
     fun setAlarm(medicineId: Long, alarmDateTime: Long)

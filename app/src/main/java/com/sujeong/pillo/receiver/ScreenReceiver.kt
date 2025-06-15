@@ -1,10 +1,10 @@
-package com.sujeong.pillo.alarm.receiver
+package com.sujeong.pillo.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.sujeong.pillo.MainActivity
+import com.sujeong.pillo.presentation.main.MainActivity
 
 class ScreenReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

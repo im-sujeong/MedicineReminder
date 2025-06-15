@@ -1,11 +1,12 @@
-package com.sujeong.pillo.alarm.manager
+package com.sujeong.pillo.common.manager
 
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.sujeong.pillo.alarm.receiver.MedicineAlarmReceiver
+import com.sujeong.pillo.receiver.MedicineAlarmReceiver
 
 class MedicineAlarmManagerImpl(
     private val context: Context
@@ -33,7 +34,7 @@ class MedicineAlarmManagerImpl(
         Log.d("PilloTAG", "clearAlarmNotification: medicineId = $medicineId")
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE)
-                as android.app.NotificationManager
+                as NotificationManager
 
         notificationManager.cancel(medicineId.toInt())
     }

@@ -1,8 +1,12 @@
 package com.sujeong.pillo.common.di
 
 import android.content.Context
-import com.sujeong.pillo.alarm.manager.MedicineAlarmManager
-import com.sujeong.pillo.alarm.manager.MedicineAlarmManagerImpl
+import android.content.SharedPreferences
+import com.sujeong.pillo.AppConstant.PREF_NAME
+import com.sujeong.pillo.common.manager.MedicineAlarmManager
+import com.sujeong.pillo.common.manager.MedicineAlarmManagerImpl
+import com.sujeong.pillo.common.manager.PreferencesManager
+import com.sujeong.pillo.common.manager.PreferencesManagerImpl
 import com.sujeong.pillo.common.provider.ResourceProvider
 import com.sujeong.pillo.common.provider.ResourceProviderImpl
 import dagger.Module
@@ -29,5 +33,21 @@ class CommonModule {
         @ApplicationContext context: Context
     ): MedicineAlarmManager {
         return MedicineAlarmManagerImpl(context)
+    }
+
+    @Singleton
+    @Provides
+    fun provideSharedPref(
+        @ApplicationContext context: Context
+    ): SharedPreferences {
+        return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+    }
+
+    @Singleton
+    @Provides
+    fun providePreferencesManager(
+        preferences: SharedPreferences
+    ): PreferencesManager {
+        return PreferencesManagerImpl(preferences)
     }
 }

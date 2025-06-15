@@ -19,7 +19,7 @@
         android:name=".PilloApplication"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".presentation.main.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:launchMode="singleTop"
@@ -33,10 +33,14 @@
         </activity>
 
         <receiver
-            android:name=".alarm.receiver.MedicineAlarmReceiver"
+            android:name=".receiver.MedicineAlarmReceiver"
             android:exported="false" />
 
-        <receiver android:name=".alarm.receiver.ScreenReceiver"
+        <receiver android:name=".receiver.ScreenReceiver"
             android:exported="false"/>
+
+        <service android:name=".service.AlarmService"
+            android:exported="false"
+            android:stopWithTask="false"/>
     </application>
 </manifest>
